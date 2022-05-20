@@ -90,175 +90,171 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: Text(widget.title),
       ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: SingleChildScrollView(
-            child: Column(
-              children: <Widget>[
-                Wrap(
-                  children: [
-                    ElevatedButton(
-                        onPressed: () {
-                          if (timer?.isActive == true) {
-                            setState(() {
-                              timer?.cancel();
-                            });
-                          } else {
-                            setState(() {
-                              timer = Timer.periodic(const Duration(seconds: 1),
-                                  (timer) {
-                                setState(() {
-                                  cpu.nextCycle();
-                                });
+      body: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: SingleChildScrollView(
+          child: Column(
+            children: <Widget>[
+              Wrap(
+                children: [
+                  ElevatedButton(
+                      onPressed: () {
+                        if (timer?.isActive == true) {
+                          setState(() {
+                            timer?.cancel();
+                          });
+                        } else {
+                          setState(() {
+                            timer = Timer.periodic(const Duration(seconds: 1),
+                                (timer) {
+                              setState(() {
+                                cpu.nextCycle();
                               });
                             });
-                          }
-                        },
-                        child: Text(timer?.isActive == true ? "Stop" : "Run")),
-                    const SizedBox(height: 8, width: 8),
-                    ElevatedButton(
-                        onPressed: () {
-                          setState(() {
-                            cpu.nextCycle();
                           });
-                        },
-                        child: const Text("Single Step")),
-                    const SizedBox(height: 8, width: 8),
-                    ElevatedButton(
-                        onPressed: () {
+                        }
+                      },
+                      child: Text(timer?.isActive == true ? "Stop" : "Run")),
+                  const SizedBox(height: 8, width: 8),
+                  ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          cpu.nextCycle();
+                        });
+                      },
+                      child: const Text("Single Step")),
+                  const SizedBox(height: 8, width: 8),
+                  ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          reset();
+                        });
+                      },
+                      child: const Text("Reset")),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                children: [
+                  TextButton(
+                      onPressed: () async {
+                        try {
+                          instrs = (await loadFile())!;
                           setState(() {
                             reset();
                           });
-                        },
-                        child: const Text("Reset")),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  children: [
-                    TextButton(
-                        onPressed: () async {
-                          try {
-                            instrs = (await loadFile())!;
-                            setState(() {
-                              reset();
-                            });
-                          } catch (e) {
-                            await Noticing.showAlert(
-                                context, e.toString(), "Failed to read file");
-                          }
-                        },
-                        child: const Text("Load Instructions From File")),
-                    const SizedBox(height: 8, width: 8),
-                    TextButton(
-                        onPressed: () async {
-                          await Noticing.showDeviceModificationDialog(
-                              context, stations);
-                          setState(() {});
-                        },
-                        child: const Text("Devices Settings")),
-                    const SizedBox(height: 8, width: 8),
-                    TextButton(
-                        onPressed: () async {
-                          await Noticing.showLatencyModificationDialog(context);
-                        },
-                        child: const Text("Latency Settings")),
-                    const SizedBox(height: 8, width: 8),
-                    TextButton(
-                        onPressed: () {
-                          writeFile(statusToString(cpu));
-                        },
-                        child: const Text("Save Results to File")),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                const Text("Cycle"),
-                Text(
-                  cpu.cycle.toString(),
-                  textScaleFactor: 2.0,
-                ),
-                const SizedBox(height: 8),
-                const Text("Instructions"),
-                Table(
-                  border: TableBorder.all(color: Colors.black),
-                  children: [
-                        const TableRow(children: [
-                          PaddedText("Op", bold: true),
-                          PaddedText("R", bold: true),
-                          PaddedText("Issue", bold: true),
-                          PaddedText("Execute", bold: true),
-                          PaddedText("Write", bold: true),
-                        ])
-                      ] +
-                      cpu.instructions
-                          .map((e) => TableRow(children: [
-                                PaddedText(e.op.code),
-                                PaddedText(
-                                    '${e.data1.data} ${e.data2.data} ${e.data3.data}'),
-                                PaddedText(
-                                    e.isIssued ? '✅ ${e.issueCycle}' : ''),
-                                PaddedText(e.isStarted
-                                    ? (e.finishCycle == null
-                                        ? '🤔 ${e.startCycle} -'
-                                        : '✅ ${e.startCycle} - ${e.finishCycle!}')
-                                    : ''),
-                                PaddedText(e.isResultWritten
-                                    ? '✅ ${e.writeCycle}'
-                                    : ''),
-                              ]))
-                          .toList(),
-                ),
-                const SizedBox(height: 8),
-                const Text("Reservation Stations & Load/Store Buffers"),
-                Table(
-                  border: TableBorder.all(color: Colors.black),
-                  children: [
-                        const TableRow(children: [
-                          PaddedText("Station", bold: true),
-                          PaddedText("Busy", bold: true),
-                          PaddedText("Op", bold: true),
-                          PaddedText("Vj", bold: true),
-                          PaddedText("Vk", bold: true),
-                          PaddedText("Qj", bold: true),
-                          PaddedText("Qk", bold: true),
-                          PaddedText("A", bold: true),
-                        ])
-                      ] +
-                      cpu.reservationStations
-                          .map((e) => TableRow(children: [
-                                PaddedText(e.name),
-                                PaddedText(e.busy ? '✅' : '❌'),
-                                PaddedText(e.currentInstruction?.op.code ?? ''),
-                                PaddedText(e.vj ?? ''),
-                                PaddedText(e.vk ?? ''),
-                                PaddedText(e.qj?.name ?? ''),
-                                PaddedText(e.qk?.name ?? ''),
-                                PaddedText(e.A ?? ''),
-                              ]))
-                          .toList(),
-                ),
-                const SizedBox(height: 8),
-                const Text("CPU Registers"),
-                Table(
-                  border: TableBorder.all(color: Colors.black),
-                  children: [
-                    TableRow(
-                        children: cpu.registers
-                            .map<String, Widget>((key, value) =>
-                                MapEntry(key, PaddedText(key, bold: true)))
-                            .values
-                            .toList()),
-                    TableRow(
-                        children: cpu.registers
-                            .map<String, Widget>((key, value) =>
-                                MapEntry(key, PaddedText(value?.name ?? '')))
-                            .values
-                            .toList()),
-                  ],
-                ),
-              ],
-            ),
+                        } catch (e) {
+                          await Noticing.showAlert(
+                              context, e.toString(), "Failed to read file");
+                        }
+                      },
+                      child: const Text("Load Instructions From File")),
+                  const SizedBox(height: 8, width: 8),
+                  TextButton(
+                      onPressed: () async {
+                        await Noticing.showDeviceModificationDialog(
+                            context, stations);
+                        setState(() {});
+                      },
+                      child: const Text("Devices Settings")),
+                  const SizedBox(height: 8, width: 8),
+                  TextButton(
+                      onPressed: () async {
+                        await Noticing.showLatencyModificationDialog(context);
+                      },
+                      child: const Text("Latency Settings")),
+                  const SizedBox(height: 8, width: 8),
+                  TextButton(
+                      onPressed: () {
+                        writeFile(statusToString(cpu));
+                      },
+                      child: const Text("Save Results to File")),
+                ],
+              ),
+              const SizedBox(height: 16),
+              const Text("Cycle"),
+              Text(
+                cpu.cycle.toString(),
+                textScaleFactor: 2.0,
+              ),
+              const SizedBox(height: 8),
+              const Text("Instructions"),
+              Table(
+                border: TableBorder.all(color: Colors.black),
+                children: [
+                      const TableRow(children: [
+                        PaddedText("Op", bold: true),
+                        PaddedText("R", bold: true),
+                        PaddedText("Issue", bold: true),
+                        PaddedText("Execute", bold: true),
+                        PaddedText("Write", bold: true),
+                      ])
+                    ] +
+                    cpu.instructions
+                        .map((e) => TableRow(children: [
+                              PaddedText(e.op.code),
+                              PaddedText(
+                                  '${e.data1.data} ${e.data2.data} ${e.data3.data}'),
+                              PaddedText(e.isIssued ? '✅ ${e.issueCycle}' : ''),
+                              PaddedText(e.isStarted
+                                  ? (e.finishCycle == null
+                                      ? '🤔 ${e.startCycle} -'
+                                      : '✅ ${e.startCycle} - ${e.finishCycle!}')
+                                  : ''),
+                              PaddedText(
+                                  e.isResultWritten ? '✅ ${e.writeCycle}' : ''),
+                            ]))
+                        .toList(),
+              ),
+              const SizedBox(height: 8),
+              const Text("Reservation Stations & Load/Store Buffers"),
+              Table(
+                border: TableBorder.all(color: Colors.black),
+                children: [
+                      const TableRow(children: [
+                        PaddedText("Station", bold: true),
+                        PaddedText("Busy", bold: true),
+                        PaddedText("Op", bold: true),
+                        PaddedText("Vj", bold: true),
+                        PaddedText("Vk", bold: true),
+                        PaddedText("Qj", bold: true),
+                        PaddedText("Qk", bold: true),
+                        PaddedText("A", bold: true),
+                      ])
+                    ] +
+                    cpu.reservationStations
+                        .map((e) => TableRow(children: [
+                              PaddedText(e.name),
+                              PaddedText(e.busy ? '✅' : '❌'),
+                              PaddedText(e.currentInstruction?.op.code ?? ''),
+                              PaddedText(e.vj ?? ''),
+                              PaddedText(e.vk ?? ''),
+                              PaddedText(e.qj?.name ?? ''),
+                              PaddedText(e.qk?.name ?? ''),
+                              PaddedText(e.A ?? ''),
+                            ]))
+                        .toList(),
+              ),
+              const SizedBox(height: 8),
+              const Text("CPU Registers"),
+              Table(
+                border: TableBorder.all(color: Colors.black),
+                children: [
+                  TableRow(
+                      children: cpu.registers
+                          .map<String, Widget>((key, value) =>
+                              MapEntry(key, PaddedText(key, bold: true)))
+                          .values
+                          .toList()),
+                  TableRow(
+                      children: cpu.registers
+                          .map<String, Widget>((key, value) =>
+                              MapEntry(key, PaddedText(value?.name ?? '')))
+                          .values
+                          .toList()),
+                ],
+              ),
+            ],
           ),
         ),
       ),
